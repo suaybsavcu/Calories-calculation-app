@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 200)) &&
+             (!('displayName' in data) || data.displayName == null || (data.displayName is string && data.displayName.size() <= 100)) &&
+             data.dailyCalorieGoal is int && data.dailyCalorieGoal >= 500 && data.dailyCalorieGoal <= 10000 &&
+             (!('dailyProteinGoal' in data) || (data.dailyProteinGoal is int && data.dailyProteinGoal >= 0 && data.dailyProteinGoal <= 1000)) &&
+             (!('dailyCarbsGoal' in data) || (data.dailyCarbsGoal is int && data.dailyCarbsGoal >= 0 && data.dailyCarbsGoal <= 2000)) &&
+             (!('dailyFatGoal' in data) || (data.dailyFatGoal is int && data.dailyFatGoal >= 0 && data.dailyFatGoal <= 1000));
+    }
+
+    function isValidMealLog(data, userId) {
+      return data.userId == userId &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             (!('mealType' in data) || (data.mealType is string && data.mealType.size() <= 50)) &&
+             data.calories is int && data.calories >= 0 && data.calories <= 20000 &&
+             (!('proteinGrams' in data) || data.proteinGrams is number) &&
+             (!('carbsGrams' in data) || data.carbsGrams is number) &&
+             (!('fatGrams' in data) || data.fatGrams is number) &&
+             (!('healthScore' in data) || (data.healthScore is int && data.healthScore >= 0 && data.healthScore <= 100)) &&
+             (!('analysisSummary' in data) || (data.analysisSummary is string && data.analysisSummary.size() <= 2000)) &&
+             (!('ingredients' in data) || (data.ingredients is list && data.ingredients.size() <= 50 && (data.ingredients.size() == 0 || data.ingredients[0] is string))) &&
+             data.loggedDate is string && data.loggedDate.size() <= 20;
+    }
+
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+
+      allow create: if isOwner(userId) && isValidId(userId) &&
+                       incoming().userId == userId &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'dailyCalorieGoal', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'email', 'displayName', 'dailyCalorieGoal', 'dailyProteinGoal', 'dailyCarbsGoal', 'dailyFatGoal', 'createdAt', 'updatedAt']);
+
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'dailyCalorieGoal', 'dailyProteinGoal', 'dailyCarbsGoal', 'dailyFatGoal', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /meals/{mealId} {
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(mealId) &&
+                         incoming().userId == userId &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidMealLog(incoming(), userId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'calories', 'loggedDate', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'mealType', 'calories', 'proteinGrams', 'carbsGrams', 'fatGrams', 'healthScore', 'analysisSummary', 'ingredients', 'loggedDate', 'createdAt', 'updatedAt']);
+
+        allow update: if isOwner(userId) && isValidId(mealId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidMealLog(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'mealType', 'calories', 'proteinGrams', 'carbsGrams', 'fatGrams', 'healthScore', 'analysisSummary', 'ingredients', 'loggedDate', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(mealId);
+      }
+    }
+  }
+}

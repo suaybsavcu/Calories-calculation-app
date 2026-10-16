@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="firestore_database_id" translatable="false">ai-studio-android-calosnap-c50ffa4a-c94d-40c9-86bb-0cdde5df0036</string>
+    <string name="recaptcha_site_key" translatable="false">6Ldam_EtAAAAAKo6l3q4s0aVKQ50WFiv5_B2nWL5</string>
+</resources>

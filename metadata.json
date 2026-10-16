@@ -1,0 +1,6 @@
+{
+  "name": "CaloSnap",
+  "description": "AI-powered calorie calculator and nutrition tracker that analyzes food and drinks from photos using Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

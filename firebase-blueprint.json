@@ -1,0 +1,52 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with daily nutrition goals and personal targets",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The user ID" },
+        "email": { "type": "string", "description": "User email address" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "dailyCalorieGoal": { "type": "integer", "description": "Target daily calories" },
+        "dailyProteinGoal": { "type": "integer", "description": "Target daily protein in grams" },
+        "dailyCarbsGoal": { "type": "integer", "description": "Target daily carbs in grams" },
+        "dailyFatGoal": { "type": "integer", "description": "Target daily fat in grams" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when created" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp when updated" }
+      },
+      "required": ["userId", "dailyCalorieGoal", "createdAt", "updatedAt"]
+    },
+    "MealLog": {
+      "title": "MealLog",
+      "description": "Logged meal or beverage with AI-analyzed calorie and macronutrient breakdown",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner user ID" },
+        "name": { "type": "string", "description": "Identified name of the food or beverage" },
+        "mealType": { "type": "string", "description": "Meal category (BREAKFAST, LUNCH, DINNER, SNACK, DRINK)" },
+        "calories": { "type": "integer", "description": "Total estimated calories" },
+        "proteinGrams": { "type": "number", "description": "Protein content in grams" },
+        "carbsGrams": { "type": "number", "description": "Carbohydrates in grams" },
+        "fatGrams": { "type": "number", "description": "Fat in grams" },
+        "healthScore": { "type": "integer", "description": "Nutritional quality score between 1 and 100" },
+        "analysisSummary": { "type": "string", "description": "AI analysis summary explaining food components and portions" },
+        "ingredients": { "type": "array", "description": "List of detected ingredients or items in the dish" },
+        "loggedDate": { "type": "string", "description": "Date format YYYY-MM-DD" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when logged" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp when modified" }
+      },
+      "required": ["userId", "name", "calories", "loggedDate", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile and target calorie preferences"
+    },
+    "/users/{userId}/meals/{mealId}": {
+      "schema": "MealLog",
+      "description": "Daily food and beverage logs analyzed by AI"
+    }
+  }
+}
